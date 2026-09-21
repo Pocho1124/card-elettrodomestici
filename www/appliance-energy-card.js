@@ -41,6 +41,18 @@ class ApplianceEnergyCard extends HTMLElement {
     return 3;
   }
 
+  static getStubConfig() {
+    return {
+      type: "custom:appliance-energy-card",
+      name: "Nome elettrodomestico",
+      room: "",
+      state_entity: "",
+      energy_entity: "",
+      image_off: "",
+      image_on: "",
+    };
+  }
+
   _num(entityId) {
     if (!entityId) return null;
     const st = this._hass.states[entityId];
