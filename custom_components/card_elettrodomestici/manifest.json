@@ -1,0 +1,11 @@
+{
+  "domain": "card_elettrodomestici",
+  "name": "Card Elettrodomestici",
+  "codeowners": ["@Pocho1124"],
+  "config_flow": true,
+  "documentation": "https://github.com/Pocho1124/appliance-energy-integration",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/Pocho1124/appliance-energy-integration/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}
