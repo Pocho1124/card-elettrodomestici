@@ -8,9 +8,12 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import async_track_state_change_event, async_call_later
 from homeassistant.helpers.restore_state import RestoreEntity
+from homeassistant.helpers import entity_registry as er
 
 from .const import (
     CONF_DEBOUNCE_OFF_S,
+    CONF_IMAGE_OFF,
+    CONF_IMAGE_ON,
     CONF_NAME,
     CONF_POWER_ENTITY,
     CONF_THRESHOLD_W,
@@ -35,6 +38,8 @@ class ApplianceActiveBinarySensor(BinarySensorEntity, RestoreEntity):
         self._power_entity = entry.data[CONF_POWER_ENTITY]
         self._threshold = float(entry.data[CONF_THRESHOLD_W])
         self._debounce_s = int(entry.data[CONF_DEBOUNCE_OFF_S])
+        self._image_off = entry.data.get(CONF_IMAGE_OFF) or None
+        self._image_on = entry.data.get(CONF_IMAGE_ON) or None
 
         self._attr_unique_id = f"{entry.entry_id}_active"
         self._attr_name = f"{self._name} attiva"
@@ -47,6 +52,28 @@ class ApplianceActiveBinarySensor(BinarySensorEntity, RestoreEntity):
             identifiers={(DOMAIN, self._entry.entry_id)},
             name=self._name,
         )
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Espone tutto il necessario alla card: immagini e entità sorelle create da questa integrazione."""
+        reg = er.async_get(self._hass)
+        entry_id = self._entry.entry_id
+
+        def _find(unique_id: str) -> str | None:
+            return reg.async_get_entity_id("sensor", DOMAIN, unique_id)
+
+        attrs = {
+            "power_entity": self._power_entity,
+            "cycles_day_entity": _find(f"{entry_id}_cicli_day"),
+            "cycles_week_entity": _find(f"{entry_id}_cicli_week"),
+            "cycles_month_entity": _find(f"{entry_id}_cicli_month"),
+            "cost_entity": _find(f"{entry_id}_costo"),
+        }
+        if self._image_off:
+            attrs["image_off"] = self._image_off
+        if self._image_on:
+            attrs["image_on"] = self._image_on
+        return attrs
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()

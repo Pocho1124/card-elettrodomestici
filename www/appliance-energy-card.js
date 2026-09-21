@@ -1,15 +1,20 @@
-// Appliance Energy Card v3 — custom Lovelace card
-// Config:
+// Appliance Energy Card v4 — custom Lovelace card
+//
+// Config MINIMA (con l'integrazione "Card Elettrodomestici" installata,
+// state_entity espone da solo immagini, potenza, cicli e costo come attributi):
 // type: custom:appliance-energy-card
 // name: Lavatrice
 // room: Lavanderia
-// state_entity: binary_sensor.xxx_in_funzione
+// state_entity: binary_sensor.lavatrice_attiva
+// energy_entity: sensor.lavatrice_e_asciugatrice_energy_a   (facoltativo, kWh totale)
+//
+// Config COMPLETA (per usarla anche senza l'integrazione, con helper manuali —
+// ogni campo qui sotto sovrascrive quello che arriverebbe dagli attributi):
 // power_entity: sensor.xxx_power_a
+// price_entity: sensor.prezzo_energia_attuale     (usato solo se manca un cost_entity)
 // cycles_day_entity: sensor.xxx_cicli_giorno
 // cycles_week_entity: sensor.xxx_cicli_settimana
 // cycles_month_entity: sensor.xxx_cicli_mese
-// energy_entity: sensor.xxx_energy_a              (kWh totale)
-// price_entity: sensor.prezzo_energia_attuale     (usato solo per calcolare il costo, non mostrato)
 // image_off: /local/lavatrice_oblo_vuoto.png
 // image_on: /local/lavatrice_animata-18.gif
 
@@ -203,29 +208,45 @@ class ApplianceEnergyCard extends HTMLElement {
     const cfg = this._config;
     const stateEnt = this._hass.states[cfg.state_entity];
     const isOn = stateEnt && stateEnt.state === "on";
+    const attrs = (stateEnt && stateEnt.attributes) || {};
+
+    // La card preferisce sempre i valori scritti a mano in YAML (cfg.xxx);
+    // se mancano, li legge dagli attributi che l'integrazione espone da sola
+    // sul sensore principale (state_entity) — così basta una riga di YAML.
+    const imageOff = cfg.image_off || attrs.image_off;
+    const imageOn = cfg.image_on || attrs.image_on;
+    const powerEntity = cfg.power_entity || attrs.power_entity;
+    const cyclesDayEntity = cfg.cycles_day_entity || attrs.cycles_day_entity;
+    const cyclesWeekEntity = cfg.cycles_week_entity || attrs.cycles_week_entity;
+    const cyclesMonthEntity = cfg.cycles_month_entity || attrs.cycles_month_entity;
+    const energyEntity = cfg.energy_entity;
+    const costEntity = attrs.cost_entity;
 
     this._root.classList.toggle("on", isOn);
     this._status.textContent = isOn ? "In funzione" : "Spento";
 
-    if (cfg.image_on && cfg.image_off) {
-      this._img.src = isOn ? cfg.image_on : cfg.image_off;
+    if (imageOn && imageOff) {
+      this._img.src = isOn ? imageOn : imageOff;
     }
 
-    const power = this._num(cfg.power_entity);
+    const power = this._num(powerEntity);
     this._power.textContent = this._fmtNum(power, 0, "0");
 
-    this._cyclesDay.textContent = this._fmtNum(this._num(cfg.cycles_day_entity), 0, "–");
-    this._cyclesWeek.textContent = this._fmtNum(this._num(cfg.cycles_week_entity), 0, "–");
-    this._cyclesMonth.textContent = this._fmtNum(this._num(cfg.cycles_month_entity), 0, "–");
+    this._cyclesDay.textContent = this._fmtNum(this._num(cyclesDayEntity), 0, "–");
+    this._cyclesWeek.textContent = this._fmtNum(this._num(cyclesWeekEntity), 0, "–");
+    this._cyclesMonth.textContent = this._fmtNum(this._num(cyclesMonthEntity), 0, "–");
 
-    const energy = this._num(cfg.energy_entity);
+    const energy = this._num(energyEntity);
     this._energy.textContent = this._fmtNum(energy, 2, "–");
 
-    const price = this._num(cfg.price_entity);
-    if (energy !== null && price !== null) {
-      this._cost.textContent = this._fmtNum(energy * price, 2, "–");
+    // Il costo, se l'integrazione lo calcola già (sensore costo), viene letto direttamente da lì.
+    const costFromEntity = this._num(costEntity);
+    if (costFromEntity !== null) {
+      this._cost.textContent = this._fmtNum(costFromEntity, 2, "–");
     } else {
-      this._cost.textContent = "–";
+      const price = this._num(cfg.price_entity);
+      this._cost.textContent =
+        energy !== null && price !== null ? this._fmtNum(energy * price, 2, "–") : "–";
     }
   }
 }

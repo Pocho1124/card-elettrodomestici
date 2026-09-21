@@ -9,6 +9,8 @@ from homeassistant.helpers import selector
 from .const import (
     CONF_DEBOUNCE_OFF_S,
     CONF_ENERGY_ENTITY,
+    CONF_IMAGE_OFF,
+    CONF_IMAGE_ON,
     CONF_NAME,
     CONF_POWER_ENTITY,
     CONF_PRICE_ENTITY,
@@ -44,6 +46,12 @@ def _schema(defaults: dict | None = None) -> vol.Schema:
             ): selector.NumberSelector(
                 selector.NumberSelectorConfig(min=0, max=1800, unit_of_measurement="s")
             ),
+            vol.Optional(
+                CONF_IMAGE_OFF, default=defaults.get(CONF_IMAGE_OFF, "")
+            ): str,
+            vol.Optional(
+                CONF_IMAGE_ON, default=defaults.get(CONF_IMAGE_ON, "")
+            ): str,
         }
     )
 

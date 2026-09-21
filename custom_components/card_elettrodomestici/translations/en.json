@@ -9,7 +9,9 @@
           "energy_entity": "Sensore di energia totale (kWh, opzionale)",
           "price_entity": "Sensore prezzo attuale (€/kWh, opzionale)",
           "threshold_w": "Soglia accensione (W)",
-          "debounce_off_s": "Ritardo spegnimento (secondi)"
+          "debounce_off_s": "Ritardo spegnimento (secondi)",
+          "image_off": "Immagine statica (spento)",
+          "image_on": "Immagine animata / gif (in funzione)"
         }
       }
     }
@@ -23,7 +25,9 @@
           "energy_entity": "Sensore di energia totale (kWh, opzionale)",
           "price_entity": "Sensore prezzo attuale (€/kWh, opzionale)",
           "threshold_w": "Soglia accensione (W)",
-          "debounce_off_s": "Ritardo spegnimento (secondi)"
+          "debounce_off_s": "Ritardo spegnimento (secondi)",
+          "image_off": "Immagine statica (spento)",
+          "image_on": "Immagine animata / gif (in funzione)"
         }
       }
     }

@@ -8,6 +8,8 @@ CONF_ENERGY_ENTITY = "energy_entity"
 CONF_PRICE_ENTITY = "price_entity"
 CONF_THRESHOLD_W = "threshold_w"
 CONF_DEBOUNCE_OFF_S = "debounce_off_s"
+CONF_IMAGE_OFF = "image_off"
+CONF_IMAGE_ON = "image_on"
 
 DEFAULT_THRESHOLD_W = 15
 DEFAULT_DEBOUNCE_OFF_S = 180
