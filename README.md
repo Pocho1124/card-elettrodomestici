@@ -75,7 +75,7 @@ image_off: /local/lavatrice_oblo_vuoto.png
 image_on: /local/lavatrice_animata-18.gif
 ```
 
-Il file della card (`appliance-energy-card.js`) va caricato in `config/www/` e registrato come risorsa Lovelace di tipo "Modulo JavaScript" con URL `/local/appliance-energy-card.js`.
+La card viene caricata automaticamente dall'integrazione stessa (nessun file da copiare in `www/`, nessuna risorsa da registrare a mano): appena installi "Card Elettrodomestici", la card `custom:appliance-energy-card` è già disponibile.
 
 ## Roadmap
 
