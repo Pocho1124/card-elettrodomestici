@@ -6,6 +6,7 @@ from pathlib import Path
 from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.loader import async_get_integration
 
 from .const import DOMAIN, PLATFORMS
 
@@ -33,7 +34,10 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         # Fallback per versioni di Home Assistant meno recenti
         hass.http.register_static_path(JS_URL_PATH, local_path, cache_headers=False)
 
-    add_extra_js_url(hass, JS_URL_PATH)
+    # Aggiunge la versione dell'integrazione come parametro: cambia ad ogni
+    # release, così il browser scarica di nuovo il file invece di tenerlo in cache.
+    integration = await async_get_integration(hass, DOMAIN)
+    add_extra_js_url(hass, f"{JS_URL_PATH}?v={integration.version}")
     hass.data[DOMAIN][_FRONTEND_REGISTERED] = True
     return True
 
