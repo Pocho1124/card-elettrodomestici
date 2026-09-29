@@ -88,6 +88,18 @@ class ApplianceActiveBinarySensor(BinarySensorEntity, RestoreEntity):
             )
         )
 
+        # Gli attributi (entità cicli/costo) si calcolano solo quando scriviamo
+        # lo stato: li rinfreschiamo subito e di nuovo dopo qualche secondo,
+        # nel caso i sensori "sorelle" non fossero ancora registrati al primo giro.
+        self.async_write_ha_state()
+        self.async_on_remove(
+            async_call_later(self._hass, 10, self._refresh_attributes)
+        )
+
+    @callback
+    def _refresh_attributes(self, _now) -> None:
+        self.async_write_ha_state()
+
     @callback
     def _handle_power_change(self, event: Event) -> None:
         new_state = event.data.get("new_state")
