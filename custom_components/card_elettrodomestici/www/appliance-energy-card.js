@@ -1,8 +1,8 @@
-// Appliance Energy Card v4 — custom Lovelace card
+// Card Elettrodomestici v4 — custom Lovelace card
 //
 // Config MINIMA (con l'integrazione "Card Elettrodomestici" installata,
 // state_entity espone da solo immagini, potenza, cicli e costo come attributi):
-// type: custom:appliance-energy-card
+// type: custom:card-elettrodomestici
 // name: Lavatrice
 // room: Lavanderia
 // state_entity: binary_sensor.lavatrice_attiva
@@ -43,7 +43,7 @@ class ApplianceEnergyCard extends HTMLElement {
 
   static getStubConfig() {
     return {
-      type: "custom:appliance-energy-card",
+      type: "custom:card-elettrodomestici",
       name: "Nome elettrodomestico",
       room: "",
       state_entity: "",
@@ -263,11 +263,11 @@ class ApplianceEnergyCard extends HTMLElement {
   }
 }
 
-customElements.define("appliance-energy-card", ApplianceEnergyCard);
+customElements.define("card-elettrodomestici", ApplianceEnergyCard);
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: "appliance-energy-card",
-  name: "Appliance Energy Card",
+  type: "card-elettrodomestici",
+  name: "Card Elettrodomestici",
   description: "Card per monitorare consumo, costo e cicli di un elettrodomestico",
 });
