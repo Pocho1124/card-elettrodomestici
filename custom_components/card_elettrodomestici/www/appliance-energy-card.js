@@ -23,7 +23,6 @@ const FONT_LINK_ID = "aec-font-link";
 class ApplianceEnergyCard extends HTMLElement {
   setConfig(config) {
     if (!config.state_entity) throw new Error("Serve 'state_entity' in configurazione.");
-    if (!config.power_entity) throw new Error("Serve 'power_entity' in configurazione.");
     this._config = config;
     this._built = false;
   }
@@ -46,7 +45,7 @@ class ApplianceEnergyCard extends HTMLElement {
       type: "custom:card-elettrodomestici",
       name: "Nome elettrodomestico",
       room: "",
-      state_entity: "",
+      state_entity: "binary_sensor.esempio_attiva",
       energy_entity: "",
       image_off: "",
       image_on: "",
