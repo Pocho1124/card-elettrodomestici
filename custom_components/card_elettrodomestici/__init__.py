@@ -38,21 +38,23 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     integration = await async_get_integration(hass, DOMAIN)
     versioned_url = f"{JS_URL_PATH}?v={integration.version}"
 
-    # Aspettiamo che Home Assistant abbia finito l'avvio (Lovelace incluso)
-    # prima di provare a scrivere una risorsa vera nella sua lista risorse:
-    # è lo stesso identico meccanismo di "Gestisci le risorse", ma lo facciamo
-    # noi al posto dell'utente, così funziona anche dove l'iniezione
-    # automatica lato frontend non arriva (es. alcune WebView mobile).
-    async def _register_resource(_event) -> None:
+    # Se Home Assistant è già avviato (es. l'integrazione si carica dopo il
+    # boot), l'evento EVENT_HOMEASSISTANT_STARTED è già passato e non lo
+    # riceveremmo mai: in quel caso eseguiamo subito invece di aspettarlo.
+    async def _register_resource(_event=None) -> None:
         await _async_ensure_lovelace_resource(hass, versioned_url)
 
-    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _register_resource)
+    if hass.is_running:
+        hass.async_create_task(_register_resource())
+    else:
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _register_resource)
 
     hass.data[DOMAIN][_FRONTEND_REGISTERED] = True
     return True
 
 
 async def _async_ensure_lovelace_resource(hass: HomeAssistant, url: str) -> None:
+    _LOGGER.warning("Card Elettrodomestici: avvio registrazione automatica risorsa (%s)", url)
     try:
         lovelace_data = hass.data.get("lovelace")
         resources = getattr(lovelace_data, "resources", None) or lovelace_data["resources"]
