@@ -37,7 +37,12 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     # Aggiunge la versione dell'integrazione come parametro: cambia ad ogni
     # release, così il browser scarica di nuovo il file invece di tenerlo in cache.
     integration = await async_get_integration(hass, DOMAIN)
-    add_extra_js_url(hass, f"{JS_URL_PATH}?v={integration.version}")
+    # Registrato sia per il frontend moderno che per quello "legacy" (es5),
+    # perché Home Assistant sceglie l'uno o l'altro in base al browser/dispositivo
+    # e su alcuni mobile/WebView può scegliere il legacy senza che ce ne accorgiamo.
+    versioned_url = f"{JS_URL_PATH}?v={integration.version}"
+    add_extra_js_url(hass, versioned_url)
+    add_extra_js_url(hass, versioned_url, es5=True)
     hass.data[DOMAIN][_FRONTEND_REGISTERED] = True
     return True
 
