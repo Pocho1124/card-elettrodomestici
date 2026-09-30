@@ -1,14 +1,17 @@
 """Appliance Energy Monitor."""
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
-from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
 from .const import DOMAIN, PLATFORMS
+
+_LOGGER = logging.getLogger(__name__)
 
 JS_FILENAME = "appliance-energy-card.js"
 JS_URL_PATH = f"/{DOMAIN}_files/{JS_FILENAME}"
@@ -16,7 +19,7 @@ _FRONTEND_REGISTERED = "_frontend_registered"
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Chiamata una sola volta all'avvio: pubblica il file JS della card senza intervento manuale."""
+    """Pubblica il file JS della card e la registra come vera risorsa Lovelace."""
     hass.data.setdefault(DOMAIN, {})
     if hass.data[DOMAIN].get(_FRONTEND_REGISTERED):
         return True
@@ -24,27 +27,63 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     local_path = str(Path(__file__).parent / "www" / JS_FILENAME)
 
     try:
-        # API moderna (Home Assistant recenti)
         from homeassistant.components.http import StaticPathConfig
 
         await hass.http.async_register_static_paths(
             [StaticPathConfig(JS_URL_PATH, local_path, False)]
         )
     except ImportError:
-        # Fallback per versioni di Home Assistant meno recenti
         hass.http.register_static_path(JS_URL_PATH, local_path, cache_headers=False)
 
-    # Aggiunge la versione dell'integrazione come parametro: cambia ad ogni
-    # release, così il browser scarica di nuovo il file invece di tenerlo in cache.
     integration = await async_get_integration(hass, DOMAIN)
-    # Registrato sia per il frontend moderno che per quello "legacy" (es5),
-    # perché Home Assistant sceglie l'uno o l'altro in base al browser/dispositivo
-    # e su alcuni mobile/WebView può scegliere il legacy senza che ce ne accorgiamo.
     versioned_url = f"{JS_URL_PATH}?v={integration.version}"
-    add_extra_js_url(hass, versioned_url)
-    add_extra_js_url(hass, versioned_url, es5=True)
+
+    # Aspettiamo che Home Assistant abbia finito l'avvio (Lovelace incluso)
+    # prima di provare a scrivere una risorsa vera nella sua lista risorse:
+    # è lo stesso identico meccanismo di "Gestisci le risorse", ma lo facciamo
+    # noi al posto dell'utente, così funziona anche dove l'iniezione
+    # automatica lato frontend non arriva (es. alcune WebView mobile).
+    async def _register_resource(_event) -> None:
+        await _async_ensure_lovelace_resource(hass, versioned_url)
+
+    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _register_resource)
+
     hass.data[DOMAIN][_FRONTEND_REGISTERED] = True
     return True
+
+
+async def _async_ensure_lovelace_resource(hass: HomeAssistant, url: str) -> None:
+    try:
+        lovelace_data = hass.data.get("lovelace")
+        resources = getattr(lovelace_data, "resources", None) or lovelace_data["resources"]
+        if resources is None:
+            _LOGGER.warning(
+                "Card Elettrodomestici: impossibile trovare le risorse Lovelace; "
+                "aggiungi manualmente %s in Impostazioni > Dashboard > Risorse.",
+                url,
+            )
+            return
+
+        await resources.async_get_info()
+        base_url = url.split("?")[0]
+        already_present = any(
+            base_url in item.get("url", "") for item in resources.async_items()
+        )
+        if already_present:
+            # Aggiorna l'URL versionato se è cambiato (nuova release)
+            for item in resources.async_items():
+                if base_url in item.get("url", "") and item["url"] != url:
+                    await resources.async_update_item(item["id"], {"url": url})
+            return
+
+        await resources.async_create_item({"res_type": "module", "url": url})
+        _LOGGER.info("Card Elettrodomestici: risorsa Lovelace registrata automaticamente.")
+    except Exception:  # noqa: BLE001
+        _LOGGER.exception(
+            "Card Elettrodomestici: registrazione automatica della risorsa fallita. "
+            "Aggiungi manualmente %s in Impostazioni > Dashboard > Risorse (Modulo JavaScript).",
+            url,
+        )
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
